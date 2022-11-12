@@ -2,7 +2,6 @@
   "name": "path-router",
   "version": "0.1.0",
   "description": "string path router",
-  "main": "main.js",
   "scripts": {
     "build": "tsc",
     "test": "mocha --require ts-node/register ./test/**.test.ts"
