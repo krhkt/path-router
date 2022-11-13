@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import { PathRoute } from '../src/path-route';
-import type { PlaceholderParsedPathPartType } from '../src/path-route';
+import type { PlaceholderParsedPathPartType, ConstraintType } from '../src/path-route';
 
 describe('PathRoute', () => {
     describe('processPathTemplate()', () => {
@@ -24,9 +24,9 @@ describe('PathRoute', () => {
             // arrange
             const route = new PathRoute({
                 name: 'main-route',
-                path: '/basepath/{innerParam}/prefix-{idParam}-suffix',
+                path: '/basepath/{innerParam}/prefix-{idParam}-suffix/',
             });
-            const expectedResults = ['', 'basepath', '{innerParam}', 'prefix-{idParam}-suffix'];
+            const expectedResults = ['', 'basepath', '{innerParam}', 'prefix-{idParam}-suffix', ''];
             const expectedInnerParam = {
                 prefix: '',
                 identifier: 'innerParam',
@@ -90,15 +90,15 @@ describe('PathRoute', () => {
         });
     });
 
-    describe('validateConstraintDefinitions()', () => {
+    describe('_validateConstraintDefinitions()', () => {
         it(`throws an Error if constraints have identifier not present in the pathTemplate`, () => {
             // arrange
             const pathTemplate = '/{firstIdentifier}/path/parts/{secondIdentifier}';
-            const constraints = {firstIdentifier: /\d+/, inexistentIdentifier: /\w+/};
+            const constraints = { firstIdentifier: /\d+/, inexistentIdentifier: /\w+/ };
 
             // act
             try {
-                const route = new PathRoute({
+                new PathRoute({
                     name: 'route-name',
                     path: pathTemplate,
                     constraints,
@@ -114,11 +114,11 @@ describe('PathRoute', () => {
         it(`doesn't throw if all constraints exist in the pathTemplate`, () => {
             // arrange
             const pathTemplate = '/basePath/{controller}/{action}/{id}/{*tail}';
-            const constraints = {action: /\w+/, id: /\d+/, tail: /\D+/};
+            const constraints = { action: /\w+/, id: /\d+/, tail: /\D+/ };
 
             // act
             try {
-                const route = new PathRoute({
+                new PathRoute({
                     name: 'route-name',
                     path: pathTemplate,
                     constraints,
@@ -130,6 +130,130 @@ describe('PathRoute', () => {
 
             assert.ok(true);
         })
+    });
+
+    describe('_applyConstraintsToParsedTemplate()', () => {
+        it('sets the constraint property related by the identifer of a placeholder parsed template part', () => {
+            // arrange
+            const path = 'base/{controller}/{action}';
+            const constraints = { controller: /\w+/, action: /\D+/ };
+
+            // act
+            const route = new PathRoute({ name: 'testRoute', path, constraints });
+            const controllerParsedPart = route.parsedPathTemplate[1] as PlaceholderParsedPathPartType;
+            const actionParsedPart = route.parsedPathTemplate[2] as PlaceholderParsedPathPartType;
+
+            // assert
+            assert.equal(controllerParsedPart.constraint, constraints.controller);
+            assert.equal(actionParsedPart.constraint, constraints.action);
+        });
+    });
+
+    describe('match()', () => {
+        // #region [ Non-matches tests ]
+        const notMatchesTestCases = [
+            { input: '/simpleroute', routeConfig: {path: '/simpleroute/anotherPath'} },
+            { input: '/basepath', routeConfig: {path: 'basepath'} },
+            { input: '/partA/partB', routeConfig: {path: '/partA'} },
+            {
+                input: '/res/edit/invalidId-10',
+                routeConfig: {
+                    path: '/res/{action}/{id}',
+                    constraints: {
+                        action: PathRoute.WordParam,
+                        id: PathRoute.NumericParam
+                    } as ConstraintType,
+                },
+            },
+            {
+                input: '/base/deep/greedy/invalid1/path10',
+                routeConfig: {
+                    path: '/base/{*all}',
+                    constraints: { all: PathRoute.NonDigitParam } as ConstraintType,
+                },
+            }
+        ];
+        notMatchesTestCases.forEach((params) => {
+            it('return null if the given path is not a match', () => {
+                // arrange
+                const pathInput = params.input;
+                const route = new PathRoute({ name: 'routeName', ...params.routeConfig });
+
+                // act
+                const result = route.match(pathInput);
+
+                // assert
+                assert.equal(result, null);
+            });
+        });
+        // #endregion
+
+        // #region [ Match tests ]
+        const matchTestCases = [
+            { input: '/', routeConfig: {path: '/'}, expected: {} },
+            { input: '/simpleroute', routeConfig: {path: '/simpleroute'}, expected: {} },
+            { input: '/partA/partB', routeConfig: {path: '/partA/partB'}, expected: {} },
+            {
+                input: '/res/edit/10',
+                routeConfig: {
+                    path: '/res/{action}/{id}',
+                    constraints: { action: PathRoute.WordParam, id: PathRoute.NumericParam } as ConstraintType,
+                },
+                expected: { action: 'edit', id: '10' },
+            },
+            {
+                input: '/base/deep/greedy/path/id100',
+                routeConfig: { path: '/base/{*all}' },
+                expected: { all: 'deep/greedy/path/id100' },
+            },
+            {
+                input: '/resource/base:permission/auth',
+                routeConfig: { path: '/resource/base:{resourceId}/auth' },
+                expected: { resourceId: 'permission' },
+            },
+            {
+                input: '/core/id-main/tUserController',
+                routeConfig: { path: '/{base}/id-{type}/t{subtype}Controller' },
+                expected: {
+                    base: 'core',
+                    type: 'main',
+                    subtype: 'User',
+                },
+            },
+            {
+                input: '/user/new/',
+                routeConfig: {
+                    path: '/{resource}/{action}/{id}',
+                    constraints: { id: PathRoute.OptionalParam },
+                },
+                expected: {
+                    resource: 'user',
+                    action: 'new',
+                    id: '',
+                },
+            },
+        ];
+        matchTestCases.forEach((params) => {
+            it('returns the correct params if the route is a match', () => {
+                // arrange
+                const inputPath = params.input;
+                const route = new PathRoute({ name: 'routeName', ...params.routeConfig });
+                const expectedParams = params.expected;
+
+                // act
+                const resultParams = route.match(inputPath);
+
+                // assert
+                assert.deepEqual(resultParams, expectedParams);
+            });
+        });
+        // #endregion
+    });
+
+    describe('buildPathByParams()', () => {
+        it('return null if the given path is not a match', () => {
+            // arrange
+        });
     });
 });
 

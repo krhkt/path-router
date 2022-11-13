@@ -1,5 +1,3 @@
-import { PathRouteHandler} from "./path-route-handler";
-
 // a path template placeholder can have it's identifer surrounded by a prefix and/or a suffix string
 // valid placeholders parts examples:
 //  {identifier}
@@ -10,6 +8,8 @@ const rgPartWithPlaceholder = /^(?<prefix>[^\{\}]*)[\{](?<identifier>[^\*\{\}]+)
 // and has the following format: {*identifier}
 const rgGreedyPlaceholder = /^\{\*(?<identifier>[^\}\{]+)\}$/;
 
+type ConstraintValidatorType = RegExp | ((input: string) => boolean);
+
 export type StringParsedPathPartType = {
     type: 'string',
     path: string,
@@ -19,9 +19,8 @@ export type GreedyPlaceholderParsedPathPartType = {
     type: 'greedy',
     path: string,
     identifier: string,
+    constraint?: ConstraintValidatorType,
 };
-
-export type ConstraintValidatorType = RegExp | ((input: string) => boolean);
 
 export type PlaceholderParsedPathPartType = {
     type: 'placeholder',
@@ -37,29 +36,42 @@ export type ParsedPathPartType =
     | GreedyPlaceholderParsedPathPartType
     | PlaceholderParsedPathPartType;
 
+export const isStringPartType = (parsedPart: ParsedPathPartType): parsedPart is StringParsedPathPartType => parsedPart.type === 'string';
+export const isPlaceholderPartType = (parsedPart: ParsedPathPartType): parsedPart is PlaceholderParsedPathPartType => parsedPart.type === 'placeholder';
+export const isGreedyPartType = (parsedPart: ParsedPathPartType): parsedPart is GreedyPlaceholderParsedPathPartType => parsedPart.type === 'greedy';
+
 export type ConstraintType = {
     [index: string]: ConstraintValidatorType
 };
 
-export type DefaultsType = {
+export type ParamsType = {
     [index: string]: string,
 };
 
-type PathRouteConstructorObjectType = {
+export type PathRouteConstructorObjectType = {
     name: string,
     path: string,
     separator?: string,
-    defaults?: DefaultsType,
+    defaults?: ParamsType,
     constraints?: ConstraintType,
 }
 
 export class PathRoute {
-    separator: string;
-    name: string;
-    pathTemplate: string;
-    defaults: DefaultsType;
-    constraints: ConstraintType;
-    parsedPathTemplate: Array<ParsedPathPartType>;
+    // shorthand contraints
+    static NumericParam = /^\d+$/;
+    static NumberParam = /^(?:-|\+)?\d+$/;
+    static WordParam = /^\w+$/;
+    static AlphaParam = /^[a-zA-Z]*$/;
+    static AlphaNumericParam = /^[a-zA-Z0-9]+$/;
+    static NonDigitParam = /^\D+$/;
+    static OptionalParam = /.*/;
+
+    separator: Readonly<string>;
+    name: Readonly<string>;
+    pathTemplate: Readonly<string>;
+    defaults: Readonly<ParamsType>;
+    constraints: Readonly<ConstraintType>;
+    parsedPathTemplate: Readonly<Array<ParsedPathPartType>>;
 
     constructor(
         { name, path, separator = '/', defaults = {}, constraints = {} }:
@@ -72,7 +84,8 @@ export class PathRoute {
         this.constraints = constraints;
 
         this.parsedPathTemplate = this.processPathTemplate();
-        this.validateConstraintDefinitions(this.parsedPathTemplate, this.constraints);
+        this._validateConstraintDefinitions(this.parsedPathTemplate, this.constraints);
+        this._applyConstraintsToParsedTemplate();
     }
 
     processPathTemplate() {
@@ -114,10 +127,98 @@ export class PathRoute {
         return parsedPaths;
     }
 
-    validateConstraintDefinitions(parsedPathTemplate: Array<ParsedPathPartType>, constraints: ConstraintType) {
+    match(givenPath: string): ParamsType | null {
+        const givenPathParts = givenPath.split(this.separator);
+        const params: ParamsType = Object.assign({}, this.defaults);
+
+        for (const parsedPart of this.parsedPathTemplate) {
+            if (givenPathParts.length === 0) return null;
+
+            if (isStringPartType(parsedPart)) {
+                const givenPart = givenPathParts.shift()!;
+                if (!this._matchString(givenPart, parsedPart)) return null;
+                continue;
+            }
+
+            if (isPlaceholderPartType(parsedPart)) {
+                const givenPart = givenPathParts.shift()!;
+                const paramValue = this._matchPlaceholder(givenPart, parsedPart);
+                if (paramValue === null) return null;
+                params[parsedPart.identifier] = paramValue;
+                continue;
+            }
+
+            const tail = givenPathParts.join(this.separator);
+            const paramValue = this._matchGreedy(tail, parsedPart);
+            if (paramValue === null) return null;
+            params[parsedPart.identifier] = paramValue;
+            return params;
+        }
+
+        // if the array is not exhausted, that means that the path
+        // is not a complete match
+        return (!givenPathParts.length) ? params : null;
+    }
+//    match(givenPath: string): ParamsType | null {
+//        const givenPathParts = givenPath.split(this.separator);
+//        const params: ParamsType = Object.assign({}, this.defaults);
+//
+//        for (let i = 0; i < this.parsedPathTemplate.length; i += 1) {
+//            if (givenPathParts.length <= i) return null;
+//
+//            const parsedPart = this.parsedPathTemplate[i];
+//
+//            if (isStringPartType(parsedPart)) {
+//                const givenPart = givenPathParts[i];
+//                if (!this._matchString(givenPart, parsedPart)) return null;
+//                continue;
+//            }
+//
+//            let paramValue: string | null = null;
+//            if (isPlaceholderPartType(parsedPart)) {
+//                const givenPart = givenPathParts[i];
+//                paramValue = this._matchPlaceholder(givenPart, parsedPart);
+//            } else {
+//                const tail = givenPathParts.slice(i).join(this.separator);
+//                paramValue = this._matchGreedy(tail, parsedPart);
+//            }
+//
+//            if (paramValue === null) return null;
+//
+//            params[parsedPart.identifier] = paramValue;
+//        }
+//
+//        return params;
+//    }
+
+    buildPathByParams(params: ParamsType = {}) {
+        const path: Array<string> = [];
+
+        for (const parsedPart of this.parsedPathTemplate) {
+            if (isStringPartType(parsedPart)) {
+                path.push(parsedPart.path);
+                continue;
+            }
+
+            if (!params.hasOwnProperty(parsedPart.identifier)) return null;
+
+            const value = params[parsedPart.identifier];
+            if (!this._applyConstraint(value, parsedPart.constraint)) return null;
+
+            path.push(
+                isPlaceholderPartType(parsedPart)
+                ? `${parsedPart.prefix}${value}${parsedPart.suffix}`
+                : value
+            );
+        }
+
+        return path.join(this.separator);
+    }
+
+    _validateConstraintDefinitions(parsedPathTemplate: Readonly<Array<ParsedPathPartType>>, constraints: ConstraintType) {
         for (const constraintIdentifier of Object.keys(constraints)) {
             const existsInPaths = parsedPathTemplate.some((path) => {
-                if (path.type === 'string') return false;
+                if (isStringPartType(path)) return false;
 
                 return path.identifier === constraintIdentifier;
             });
@@ -130,23 +231,38 @@ export class PathRoute {
         }
     }
 
-    match(givenPath: string): {[index: string]: string} | null {
-        const givenPathParts = givenPath.split(this.separator);
-        const params = Object.assign({}, this.defaults);
+    _applyConstraintsToParsedTemplate() {
+        for (const parsedPart of this.parsedPathTemplate) {
+            if (isStringPartType(parsedPart)) continue;
+            if (!this.constraints.hasOwnProperty(parsedPart.identifier)) continue;
 
-        for (let i = 0; i < this.parsedPathTemplate.length; i += 1) {
-            if (givenPathParts.length <= i) return null;
-
-            const givenPart = givenPathParts[i];
-            const parsedPart = this.parsedPathTemplate[i];
-
-
+            parsedPart.constraint = this.constraints[parsedPart.identifier];
         }
-
-        return params;
     }
 
-    _matchString(part: string, templatePath: string) {
+    _matchString(part: string, parsedPart: StringParsedPathPartType) {
+        return part === parsedPart.path;
+    }
 
+    _matchPlaceholder(part: string, parsedPart: PlaceholderParsedPathPartType) {
+        if (!part.startsWith(parsedPart.prefix)) return null;
+        if (!part.endsWith(parsedPart.suffix)) return null;
+
+        const identifierPart = part.substring(parsedPart.prefix.length, part.length - parsedPart.suffix.length);
+        return this._applyConstraint(identifierPart, parsedPart.constraint) ? identifierPart : null;
+    }
+
+    _matchGreedy(part: string, parsedPart: GreedyPlaceholderParsedPathPartType) {
+        return this._applyConstraint(part, parsedPart.constraint) ? part : null;
+    }
+
+    _applyConstraint(candidateValue: string, constraint: ConstraintValidatorType | undefined) {
+        if (constraint === undefined) return true;
+
+        if (typeof constraint === 'function') {
+            return constraint(candidateValue);
+        }
+
+        return constraint.test(candidateValue);
     }
 }
