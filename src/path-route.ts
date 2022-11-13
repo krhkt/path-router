@@ -45,27 +45,31 @@ export type DefaultsType = {
     [index: string]: string,
 };
 
+type PathRouteConstructorObjectType = {
+    name: string,
+    path: string,
+    separator?: string,
+    defaults?: DefaultsType,
+    constraints?: ConstraintType,
+}
+
 export class PathRoute {
     separator: string;
     name: string;
     pathTemplate: string;
     defaults: DefaultsType;
     constraints: ConstraintType;
-    parsedPathTemplate: Array<ParsedPathPartType> | undefined;
-    //routeHandler: PathRouteHandler;
+    parsedPathTemplate: Array<ParsedPathPartType>;
 
     constructor(
-        name: string,
-        path: string,
-        separator: string,
-        defaults: DefaultsType | null = null,
-        constraints: ConstraintType | null = null,
+        { name, path, separator = '/', defaults = {}, constraints = {} }:
+        PathRouteConstructorObjectType
     ) {
         this.name = name;
         this.pathTemplate = path;
         this.separator = separator;
-        this.defaults = defaults || {};
-        this.constraints = constraints || {}
+        this.defaults = defaults;
+        this.constraints = constraints;
 
         this.parsedPathTemplate = this.processPathTemplate();
         this.validateConstraintDefinitions(this.parsedPathTemplate, this.constraints);
@@ -124,5 +128,25 @@ export class PathRoute {
                 `"${constraintIdentifier}" doesn't exist as part of the route template path: "${this.pathTemplate}"`
             );
         }
+    }
+
+    match(givenPath: string): {[index: string]: string} | null {
+        const givenPathParts = givenPath.split(this.separator);
+        const params = Object.assign({}, this.defaults);
+
+        for (let i = 0; i < this.parsedPathTemplate.length; i += 1) {
+            if (givenPathParts.length <= i) return null;
+
+            const givenPart = givenPathParts[i];
+            const parsedPart = this.parsedPathTemplate[i];
+
+
+        }
+
+        return params;
+    }
+
+    _matchString(part: string, templatePath: string) {
+
     }
 }

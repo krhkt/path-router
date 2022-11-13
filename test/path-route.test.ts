@@ -6,7 +6,7 @@ describe('PathRoute', () => {
     describe('processPathTemplate()', () => {
         it('path without placeholder only generates string parsed parts', () => {
             // arrange
-            const route = new PathRoute('main-route', '/test/sample', '/');
+            const route = new PathRoute({ name: 'main-route', path: '/test/sample' });
             const expectedResults = ['', 'test', 'sample'];
 
             // act
@@ -22,7 +22,10 @@ describe('PathRoute', () => {
 
         it('path with placeholder generates an identifier parsed path part', () => {
             // arrange
-            const route = new PathRoute('main-route', '/basepath/{innerParam}/prefix-{idParam}-suffix', '/');
+            const route = new PathRoute({
+                name: 'main-route',
+                path: '/basepath/{innerParam}/prefix-{idParam}-suffix',
+            });
             const expectedResults = ['', 'basepath', '{innerParam}', 'prefix-{idParam}-suffix'];
             const expectedInnerParam = {
                 prefix: '',
@@ -59,10 +62,16 @@ describe('PathRoute', () => {
 
         it('only accepts greedy placeholder as the last element', () => {
             // arrange
-            const routeA = new PathRoute('routeA', '/base/{identifier}/{*greedyIdentifier}', '/');
+            const routeA = new PathRoute({
+                name: 'routeA',
+                path: '/base/{identifier}/{*greedyIdentifier}',
+            });
             const expectedPartTypesRouteA = ['string', 'string', 'placeholder', 'greedy'];
 
-            const routeB = new PathRoute('routeB', '/base/{*greedyIdentifier}/more-path', '/');
+            const routeB = new PathRoute({
+                name: 'routeB',
+                path: '/base/{*greedyIdentifier}/more-path',
+            });
             const expectedPartTypesRouteB = ['string', 'string', 'string', 'string'];
 
             // act
@@ -89,7 +98,11 @@ describe('PathRoute', () => {
 
             // act
             try {
-                const route = new PathRoute('route-name', pathTemplate, '/', null, constraints);
+                const route = new PathRoute({
+                    name: 'route-name',
+                    path: pathTemplate,
+                    constraints,
+                });
             } catch (error) {
                 assert.notEqual(error, null);
                 return;
@@ -105,7 +118,11 @@ describe('PathRoute', () => {
 
             // act
             try {
-                const route = new PathRoute('route-name', pathTemplate, '/', null, constraints);
+                const route = new PathRoute({
+                    name: 'route-name',
+                    path: pathTemplate,
+                    constraints,
+                });
             } catch (e: any) {
                 console.log(e, e.message);
                 assert.fail('valid constraints should not throw Error on create');
