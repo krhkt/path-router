@@ -1,10 +1,11 @@
 {
   "name": "path-router",
-  "version": "0.1.0",
   "description": "string path router",
+  "version": "0.1.0",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "mocha --require ts-node/register ./test/**.test.ts"
+    "test": "mocha ./test/**.test.ts"
   },
   "keywords": [
     "app-router"
