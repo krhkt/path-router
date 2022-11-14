@@ -1,6 +1,7 @@
 import * as assert from 'node:assert';
 import { PathRoute } from '../src/path-route';
-import type { PlaceholderParsedPathPartType, ConstraintType } from '../src/path-route';
+import type { PlaceholderParsedPathPartType, ConstraintType, ParamsType } from '../src/path-route';
+import { Context } from 'mocha';
 
 describe('PathRoute', () => {
     describe('processPathTemplate()', () => {
@@ -156,7 +157,6 @@ describe('PathRoute', () => {
             { input: '/basepath', routeConfig: {path: 'basepath'} },
             { input: '/partA/partB', routeConfig: {path: '/partA'} },
             {
-                input: '/res/edit/invalidId-10',
                 routeConfig: {
                     path: '/res/{action}/{id}',
                     constraints: {
@@ -164,20 +164,21 @@ describe('PathRoute', () => {
                         id: PathRoute.NumericParam
                     } as ConstraintType,
                 },
+                input: '/res/edit/invalidId-10',
             },
             {
-                input: '/base/deep/greedy/invalid1/path10',
                 routeConfig: {
                     path: '/base/{*all}',
                     constraints: { all: PathRoute.NonDigitParam } as ConstraintType,
                 },
+                input: '/base/deep/greedy/invalid1/path10',
             }
         ];
-        notMatchesTestCases.forEach((params) => {
-            it('return null if the given path is not a match', () => {
+        notMatchesTestCases.forEach((testCase) => {
+            it(`return null if the given path is not a match: ${testCase.routeConfig.path}`, () => {
                 // arrange
-                const pathInput = params.input;
-                const route = new PathRoute({ name: 'routeName', ...params.routeConfig });
+                const pathInput = testCase.input;
+                const route = new PathRoute({ name: 'routeName', ...testCase.routeConfig });
 
                 // act
                 const result = route.match(pathInput);
@@ -194,26 +195,26 @@ describe('PathRoute', () => {
             { input: '/simpleroute', routeConfig: {path: '/simpleroute'}, expected: {} },
             { input: '/partA/partB', routeConfig: {path: '/partA/partB'}, expected: {} },
             {
-                input: '/res/edit/10',
                 routeConfig: {
                     path: '/res/{action}/{id}',
                     constraints: { action: PathRoute.WordParam, id: PathRoute.NumericParam } as ConstraintType,
                 },
+                input: '/res/edit/10',
                 expected: { action: 'edit', id: '10' },
             },
             {
-                input: '/base/deep/greedy/path/id100',
                 routeConfig: { path: '/base/{*all}' },
+                input: '/base/deep/greedy/path/id100',
                 expected: { all: 'deep/greedy/path/id100' },
             },
             {
-                input: '/resource/base:permission/auth',
                 routeConfig: { path: '/resource/base:{resourceId}/auth' },
+                input: '/resource/base:permission/auth',
                 expected: { resourceId: 'permission' },
             },
             {
-                input: '/core/id-main/tUserController',
                 routeConfig: { path: '/{base}/id-{type}/t{subtype}Controller' },
+                input: '/core/id-main/tUserController',
                 expected: {
                     base: 'core',
                     type: 'main',
@@ -221,24 +222,44 @@ describe('PathRoute', () => {
                 },
             },
             {
-                input: '/user/new/',
                 routeConfig: {
                     path: '/{resource}/{action}/{id}',
                     constraints: { id: PathRoute.OptionalParam },
                 },
+                input: '/user/new/',
                 expected: {
                     resource: 'user',
                     action: 'new',
                     id: '',
                 },
             },
+            {
+                routeConfig: {
+                    path: '/{controller}/{action}/{id}',
+                    defaults: { controller: 'home', action: 'index', id: '' } as ParamsType,
+                },
+                input: '/',
+                expected: { controller: 'home', action: 'index', id: '' },
+            },
+            {
+                routeConfig: {
+                    path: '/{controller}/ns/{method}/{*innerPath}',
+                    defaults: { method: 'list', innerPath: '' },
+                },
+                input: '/testController/ns/testMethod/inner/greedy/path/100',
+                expected: {
+                    controller: 'testController',
+                    method: 'testMethod',
+                    innerPath: 'inner/greedy/path/100',
+                },
+            },
         ];
-        matchTestCases.forEach((params) => {
-            it('returns the correct params if the route is a match', () => {
+        matchTestCases.forEach((testCase) => {
+            it(`returns the correct params if the route is a match: ${testCase.routeConfig.path}`, () => {
                 // arrange
-                const inputPath = params.input;
-                const route = new PathRoute({ name: 'routeName', ...params.routeConfig });
-                const expectedParams = params.expected;
+                const inputPath = testCase.input;
+                const route = new PathRoute({ name: 'routeName', ...testCase.routeConfig });
+                const expectedParams = testCase.expected;
 
                 // act
                 const resultParams = route.match(inputPath);
@@ -251,8 +272,70 @@ describe('PathRoute', () => {
     });
 
     describe('buildPathByParams()', () => {
-        it('return null if the given path is not a match', () => {
-            // arrange
+        const buildpathTestCases = [
+            {
+                message: 'route without placeholders returns its path',
+                routeConfig: { path: '/placeholderless/route' },
+                input: {} as ParamsType,
+                expected: '/placeholderless/route',
+            },
+            {
+                message: 'provided params are used to replace placeholders',
+                routeConfig: { path: '/{controller}/{action}' },
+                input: { controller: 'opts', action: 'edit' } as ParamsType,
+                expected: '/opts/edit',
+            },
+            {
+                message: 'default values are used for missing placeholders',
+                routeConfig: {
+                    path: '/api/{controller}/{action}/{id}',
+                    defaults: { id: '' } as ParamsType,
+                },
+                input: { controller: 'home', action: 'index' } as ParamsType,
+                expected: '/api/home/index/',
+            },
+            {
+                message: 'default values are used for missing placeholders, even when they\'re not the last empty param',
+                routeConfig: {
+                    path: '/base/{orgId}/{controller}/{action}/',
+                    defaults: { controller: 'home', action: 'index' },
+                },
+                input: { orgId: 'test-org', action: 'list' } as ParamsType,
+                expected: '/base/test-org/home/list/',
+            },
+            {
+                message: 'returns null if not all placeholders are provided',
+                routeConfig: { path: '/base/{path}' },
+                input: {} as ParamsType,
+                expected: null,
+            },
+            {
+                message: 'constraints are checked when building a path for route',
+                routeConfig: {
+                    path: '/base/{parent}/child{childName}/{childId}',
+                    constraints: {
+                        parent: PathRoute.WordParam,
+                        childName: PathRoute.AlphaParam,
+                        childId: PathRoute.NumericParam,
+                    },
+                    defaults: { parent: 'root' },
+                },
+                input: { childName: '102984', childId: '1' } as ParamsType,
+                expected: null,
+            },
+        ];
+        buildpathTestCases.forEach((testCase) => {
+            it(`${testCase.message}`, () => {
+                // arrange
+                const input = testCase.input;
+                const route = new PathRoute({ name: 'routeName', ...testCase.routeConfig });
+
+                // act
+                const result = route.buildPathByParams(input);
+
+                // assert
+                assert.equal(result, testCase.expected);
+            });
         });
     });
 });

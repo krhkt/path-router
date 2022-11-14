@@ -132,16 +132,18 @@ export class PathRoute {
         const params: ParamsType = Object.assign({}, this.defaults);
 
         for (const parsedPart of this.parsedPathTemplate) {
-            if (givenPathParts.length === 0) return null;
-
             if (isStringPartType(parsedPart)) {
+                if (givenPathParts.length === 0) return null;
                 const givenPart = givenPathParts.shift()!;
                 if (!this._matchString(givenPart, parsedPart)) return null;
                 continue;
             }
 
             if (isPlaceholderPartType(parsedPart)) {
-                const givenPart = givenPathParts.shift()!;
+                const givenPart = (givenPathParts.shift()
+                    || this.defaults[parsedPart.identifier]
+                    || '');
+
                 const paramValue = this._matchPlaceholder(givenPart, parsedPart);
                 if (paramValue === null) return null;
                 params[parsedPart.identifier] = paramValue;
@@ -159,40 +161,10 @@ export class PathRoute {
         // is not a complete match
         return (!givenPathParts.length) ? params : null;
     }
-//    match(givenPath: string): ParamsType | null {
-//        const givenPathParts = givenPath.split(this.separator);
-//        const params: ParamsType = Object.assign({}, this.defaults);
-//
-//        for (let i = 0; i < this.parsedPathTemplate.length; i += 1) {
-//            if (givenPathParts.length <= i) return null;
-//
-//            const parsedPart = this.parsedPathTemplate[i];
-//
-//            if (isStringPartType(parsedPart)) {
-//                const givenPart = givenPathParts[i];
-//                if (!this._matchString(givenPart, parsedPart)) return null;
-//                continue;
-//            }
-//
-//            let paramValue: string | null = null;
-//            if (isPlaceholderPartType(parsedPart)) {
-//                const givenPart = givenPathParts[i];
-//                paramValue = this._matchPlaceholder(givenPart, parsedPart);
-//            } else {
-//                const tail = givenPathParts.slice(i).join(this.separator);
-//                paramValue = this._matchGreedy(tail, parsedPart);
-//            }
-//
-//            if (paramValue === null) return null;
-//
-//            params[parsedPart.identifier] = paramValue;
-//        }
-//
-//        return params;
-//    }
 
     buildPathByParams(params: ParamsType = {}) {
         const path: Array<string> = [];
+        const normalizedParams = Object.assign({}, this.defaults, params);
 
         for (const parsedPart of this.parsedPathTemplate) {
             if (isStringPartType(parsedPart)) {
@@ -200,14 +172,14 @@ export class PathRoute {
                 continue;
             }
 
-            if (!params.hasOwnProperty(parsedPart.identifier)) return null;
+            if (!normalizedParams.hasOwnProperty(parsedPart.identifier)) return null;
 
-            const value = params[parsedPart.identifier];
+            const value = normalizedParams[parsedPart.identifier];
             if (!this._applyConstraint(value, parsedPart.constraint)) return null;
 
             path.push(
                 isPlaceholderPartType(parsedPart)
-                ? `${parsedPart.prefix}${value}${parsedPart.suffix}`
+                ? this._buildPlacholderPartValue(value, parsedPart)
                 : value
             );
         }
@@ -264,5 +236,9 @@ export class PathRoute {
         }
 
         return constraint.test(candidateValue);
+    }
+
+    _buildPlacholderPartValue(value: string, parsedPart: PlaceholderParsedPathPartType) {
+        return `${parsedPart.prefix}${value}${parsedPart.suffix}`;
     }
 }
