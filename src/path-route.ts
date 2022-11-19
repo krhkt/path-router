@@ -66,6 +66,7 @@ export class PathRoute {
     static NonDigitParam = /^\D+$/;
     static OptionalParam = /.*/;
 
+    // properties
     separator: Readonly<string>;
     name: Readonly<string>;
     pathTemplate: Readonly<string>;
@@ -186,6 +187,7 @@ export class PathRoute {
 
         return path.join(this.separator);
     }
+
 
     _validateConstraintDefinitions(parsedPathTemplate: Readonly<Array<ParsedPathPartType>>, constraints: ConstraintType) {
         for (const constraintIdentifier of Object.keys(constraints)) {
