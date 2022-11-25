@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -r ./dist && tsc",
+    "build": "tsc",
     "test": "mocha ./test/**.test.ts"
   },
   "keywords": [

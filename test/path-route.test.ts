@@ -1,7 +1,6 @@
 import * as assert from 'node:assert';
 import { PathRoute } from '../src/path-route';
 import type { PlaceholderParsedPathPartType, ConstraintType, ParamsType } from '../src/path-route';
-import { Context } from 'mocha';
 
 describe('PathRoute', () => {
     describe('processPathTemplate()', () => {
