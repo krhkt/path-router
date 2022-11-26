@@ -1,5 +1,6 @@
 import * as assert from 'node:assert';
 import { PathRouteDefaultHandler } from '../src/path-route-default-handler';
+// import { DefaultController } from './default-handler-test-modules/default.controller';
 
 /**
  * Even though the majority of the methods are 'private', I'm still testing a few private methods
@@ -77,7 +78,21 @@ describe('PathRouteDefaultHandler', () => {
 
     describe('_loadModule', () => {
         it('loads the module if the respective file exists', async () => {
+            // arrange
+            const basePath = `${__dirname}/default-handler-test-modules`;
+            const defaultHandler = new PathRouteDefaultHandler(basePath);
 
+            // act
+            const result = await defaultHandler.execute({
+                path: 'default/index',
+                params: {
+                    controller: 'default',
+                    action: 'index'
+                }
+            });
+
+            // assert
+            assert.equal(result, 'success');
         });
     });
 

@@ -48,7 +48,7 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         const classNameParam = params[this.classNameIdentifier];
         const className = this.convertParamToClassName(classNameParam);
 
-        const fileName = this.convertParamToFileName(className);
+        const fileName = this.convertParamToFileName(classNameParam);
         const module = await this._loadFileModule(fileName);
 
         const executor = await this._instantiate(module, className, this.executorConstructorParam);
@@ -61,7 +61,7 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
 
     // method to be overwritten by child classes if the build fileName logic needs change
     convertParamToFileName(classNameIdentifier: string) {
-        return `${classNameIdentifier}.controller.js`.toLowerCase();
+        return `${classNameIdentifier}.controller`.toLowerCase();
     }
 
     // method to be overwritten by child classes if the build className logic needs change
@@ -156,8 +156,13 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
     _findPropertyCaseInsensitive(target: object, propName: string) {
         propName = propName.toLowerCase();
 
-        for (const objectProp of Object.keys(target)) {
-            if (objectProp.toLowerCase() === propName) return objectProp;
+        let current = target;
+        while (current) {
+            for (const objectProp of Object.getOwnPropertyNames(current)) {
+                if (objectProp.toLowerCase() === propName) return objectProp;
+            }
+
+            current = Object.getPrototypeOf(current);
         }
 
         return null;

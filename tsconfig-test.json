@@ -7,7 +7,7 @@
   "compilerOptions": {
     "strict": true,
     "watch": false,
-    "sourceMap": false,
+    "sourceMap": true,
 
     "target": "ES2018",
     "module": "CommonJS",
