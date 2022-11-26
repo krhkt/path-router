@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "mocha ./test/**.test.ts"
+    "test": "mocha ./test/**.test.ts",
+    "tst": "tsc --project tsconfig-test.json && mocha ./build-test/test/**.test.js"
   },
   "keywords": [
     "app-router"

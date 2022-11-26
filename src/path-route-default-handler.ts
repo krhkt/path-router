@@ -8,11 +8,14 @@ export type HandlerParamsType = {
 };
 
 export type PathRouteHandlerExecutionResult = {
-    pathToRedirect?: string,
-    dataBag?: any,
+    redirectTo?: string,
+    data?: any,
 };
 
 export type PathRouteHandlerReturnType = Promise<PathRouteHandlerExecutionResult | string | null>;
+export const isPathRouteHandlerExecutionResult =
+    (result: string | PathRouteHandlerExecutionResult | null): result is PathRouteHandlerExecutionResult =>
+         result !== null && typeof result !== 'string';
 
 export interface IPathRouteHandler {
     execute(methodParams: HandlerParamsType): PathRouteHandlerReturnType
@@ -48,7 +51,7 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         const fileName = this.convertParamToFileName(className);
         const module = await this._loadFileModule(fileName);
 
-        const executor = await this.instantiate(module, className, this.executorConstructorParam);
+        const executor = await this._instantiate(module, className, this.executorConstructorParam);
 
         const methodNameParam = params[this.methodNameIdentifier];
         const methodName = this.convertParamToMethodName(methodNameParam);
@@ -79,7 +82,7 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         return actionName;
     }
 
-    async instantiate(module: any, className: string, constructorParams: Array<any> | undefined = undefined) {
+    async _instantiate(module: any, className: string, constructorParams: Array<any> | undefined = undefined) {
         const errorMessage = `Couldn't instantiate runner class`;
 
         const normalizedClassName = this._findPropertyCaseInsensitive(module, className);

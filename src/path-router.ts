@@ -5,7 +5,7 @@ import type {
     PathRouteHandlerType,
     PathRouteHandlerReturnType,
 } from './path-route-default-handler';
-import { isPathRouteHandlerFunction } from './path-route-default-handler';
+import { isPathRouteHandlerFunction, isPathRouteHandlerExecutionResult } from './path-route-default-handler';
 
 const defaultSeparator = ':';
 
@@ -90,7 +90,7 @@ export class PathRouter {
     }
 
     findMatch(givenPath: string): MatchRouteResultType | null {
-        for (const [name, config] of this._routesMap) {
+        for (const [_, config] of this._routesMap) {
             const result = config.route.match(givenPath);
             if (result !== null) return {
                 routeConfig: config,
@@ -99,6 +99,12 @@ export class PathRouter {
         }
 
         return null;
+    }
+
+    buildPath(path: string, params: ParamsType = {}) {
+        const result = this.findMatch(path);
+
+        return result?.routeConfig.route.buildPathByParams(params);
     }
 
     async executeRoute(givenString: string): PathRouteHandlerReturnType {
@@ -141,7 +147,12 @@ export class PathRouter {
         }
 
         try {
-            return (isPathRouteHandlerFunction(handler)) ? handler(params) : handler.execute(params);
+            const result = (isPathRouteHandlerFunction(handler)) ? await handler(params) : await handler.execute(params);
+            if (isPathRouteHandlerExecutionResult(result)) {
+                if (result.redirectTo) return this.executeRoute(result.redirectTo);
+            }
+
+            return result;
         } catch (e) {
             throw new PathRouterError(
                 PathRouterErrorCode.handlerError,
