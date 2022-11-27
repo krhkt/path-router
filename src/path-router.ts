@@ -55,7 +55,7 @@ export class PathRouter {
     _defaultRouteHandler?: PathRouteHandlerType;
     _defaultMisingRouteHandler?: PathRouteHandlerType;
 
-    constructor({defaultRouteHandler, defaultMissingRouteHandler, routeSeparator = defaultSeparator}: PathRouterConstructorObjectType) {
+    constructor({defaultRouteHandler, defaultMissingRouteHandler, routeSeparator = defaultSeparator}: Partial<PathRouterConstructorObjectType> = {}) {
         this._routeSeparator = routeSeparator;
         this._defaultRouteHandler = defaultRouteHandler;
         this._defaultMisingRouteHandler = defaultMissingRouteHandler;
@@ -115,12 +115,9 @@ export class PathRouter {
                     path: givenString,
                     params: {},
                 };
-                if (isPathRouteHandlerFunction(this._defaultMisingRouteHandler)) {
-                    this._defaultMisingRouteHandler(params)
-                } else {
-                    this._defaultMisingRouteHandler.execute(params)
-                }
-                return null;
+                return (isPathRouteHandlerFunction(this._defaultMisingRouteHandler))
+                    ? this._defaultMisingRouteHandler(params)
+                    : this._defaultMisingRouteHandler.execute(params);
             }
             throw new PathRouterError(
                 PathRouterErrorCode.pathNotFound,

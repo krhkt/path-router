@@ -9,7 +9,7 @@
     "tst": "tsc --project tsconfig-test.json && mocha ./build-test/test/**.test.js"
   },
   "keywords": [
-    "app-router"
+    "app-router", "path-router"
   ],
   "author": "@krhkt",
   "license": "MIT",

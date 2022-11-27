@@ -106,10 +106,10 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
 
         const normalizedMethodName = this._findPropertyCaseInsensitive(instance, methodName);
         if (normalizedMethodName === null) {
-            throw new Error(`: ${methodName} not found`)
+            throw new Error(`${errorMessage}: ${methodName} not found`)
         }
         if (typeof instance[normalizedMethodName] !== 'function') {
-            throw new Error(`: ${methodName} is not a method (${typeof instance[normalizedMethodName]})`);
+            throw new Error(`${errorMessage}: ${methodName} is not a method (${typeof instance[normalizedMethodName]})`);
         }
 
         return instance[normalizedMethodName](params) as Promise<PathRouteHandlerExecutionResult | string | null>;
@@ -126,9 +126,13 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         const modulePath = path.join(this.baseFolderPath, filename);
         if (this._loadedModules.has(modulePath)) return this._loadedModules.get(modulePath);
 
-        const module = await import(modulePath);
-        this._loadedModules.set(modulePath, module);
-        return module;
+        try {
+            const module = await import(modulePath);
+            this._loadedModules.set(modulePath, module);
+            return module;
+        } catch (e) {
+            throw new Error(`Couldn't load module ${modulePath}`);
+        }
     }
 
     _isNewable(value: any) {

@@ -1,4 +1,5 @@
 import * as assert from 'node:assert';
+import { PathRoute } from '~/path-route';
 import { PathRouteDefaultHandler } from '../src/path-route-default-handler';
 // import { DefaultController } from './default-handler-test-modules/default.controller';
 
@@ -7,7 +8,29 @@ import { PathRouteDefaultHandler } from '../src/path-route-default-handler';
  * just to increase my confidence in the solution. These tests can be deleted if necessary.
  */
 describe('PathRouteDefaultHandler', () => {
-    describe('_instantiate', () => {
+    describe('execute()', () => {
+        it('executes and returns the method defined by the {controller x action} set', async () => {
+            // arrange
+            const className = 'default';
+            const methodName = 'index';
+            const basePath = `${__dirname}/default-handler-test-modules`;
+            const defaultHandler = new PathRouteDefaultHandler(basePath);
+
+            // act
+            const result = await defaultHandler.execute({
+                path: 'default/index',
+                params: {
+                    controller: className,
+                    action: methodName,
+                }
+            });
+
+            // assert
+            assert.equal(result, 'success');
+        });
+    });
+
+    describe('_instantiate()', () => {
         it('given an object and a class, will create a instance of the class if it exists in the object', async () => {
             // arrange
             const objModule = {
@@ -40,10 +63,12 @@ describe('PathRouteDefaultHandler', () => {
             const defaultHandler = new PathRouteDefaultHandler('');
 
             // act / assert
-            assert.throws(() => {
-                const instance = defaultHandler._instantiate(objModule, className);
+            try {
+                await defaultHandler._instantiate(objModule, className);
                 assert.fail('method should throw if class is not in the module');
-            });
+            } catch (e) {
+                assert.ok(e);
+            }
         });
 
         it(`throws if the "class" can't is not intantiable`, async () => {
@@ -69,30 +94,42 @@ describe('PathRouteDefaultHandler', () => {
             assert.equal(instance.constructor, objModule.Instantiable);
             assert.equal(instance.name, params[0]);
 
-            assert.throws(() => {
-                const result = defaultHandler._instantiate(objModule, nontInstantiablePropertyName, params);
+            try {
+                await defaultHandler._instantiate(objModule, nontInstantiablePropertyName, params);
                 assert.fail(`_instantiate should throw if the module property can't be instantiated`);
-            });
+            } catch (e) {
+                assert.ok(e);
+            }
         });
     });
 
-    describe('_loadModule', () => {
+    describe('_loadModule()', () => {
         it('loads the module if the respective file exists', async () => {
             // arrange
             const basePath = `${__dirname}/default-handler-test-modules`;
+            const fileName = 'default.controller';
             const defaultHandler = new PathRouteDefaultHandler(basePath);
 
             // act
-            const result = await defaultHandler.execute({
-                path: 'default/index',
-                params: {
-                    controller: 'default',
-                    action: 'index'
-                }
-            });
+            const result = await defaultHandler._loadFileModule(fileName);
 
             // assert
-            assert.equal(result, 'success');
+            assert.ok(result.DefaultController);
+        });
+
+        it('throws if the module cannnot be loaded', async () => {
+            // arrange
+            const basePath = `${__dirname}/default-handler-test-modules`;
+            const dummyFileName = 'non-existent-file.controller';
+            const defaultHandler = new PathRouteDefaultHandler(basePath);
+
+            // act
+            try {
+                await defaultHandler._loadFileModule(dummyFileName);
+                assert.fail(`_loadModule() should throw when the module fails to load`);
+            } catch (e) {
+                assert.ok(e);
+            }
         });
     });
 
