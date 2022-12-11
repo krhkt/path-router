@@ -12,7 +12,7 @@ export type PathRouteHandlerExecutionResult = {
     data?: any,
 };
 
-export type PathRouteHandlerReturnType = Promise<PathRouteHandlerExecutionResult | string | null>;
+export type PathRouteHandlerReturnType = Promise<PathRouteHandlerExecutionResult | string | null | void>;
 export const isPathRouteHandlerExecutionResult =
     (result: string | PathRouteHandlerExecutionResult | null): result is PathRouteHandlerExecutionResult =>
          result !== null && typeof result !== 'string';

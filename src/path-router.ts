@@ -48,7 +48,6 @@ export class PathRouterError extends Error {
     }
 }
 
-
 export class PathRouter {
     _routeSeparator: string;
     _routesMap: Readonly<Map<string, RouteItemType>> = new Map<string, RouteItemType>;
@@ -107,13 +106,13 @@ export class PathRouter {
         return result?.routeConfig.route.buildPathByParams(params);
     }
 
-    async executeRoute(givenString: string): PathRouteHandlerReturnType {
+    async executeRoute(givenString: string, additionalParams: ParamsType = {}): PathRouteHandlerReturnType {
         const matchRouteResult = this.findMatch(givenString);
         if (matchRouteResult === null) {
             if (this._defaultMisingRouteHandler) {
                 const params: any = {
                     path: givenString,
-                    params: {},
+                    params: additionalParams,
                 };
                 return (isPathRouteHandlerFunction(this._defaultMisingRouteHandler))
                     ? this._defaultMisingRouteHandler(params)
@@ -127,12 +126,15 @@ export class PathRouter {
 
         const routeConfig = matchRouteResult.routeConfig;
         if (routeConfig.redirectTo) {
-            return this.executeRoute(routeConfig.redirectTo);
+            return this.executeRoute(routeConfig.redirectTo, additionalParams);
         }
 
         const params: HandlerParamsType = {
             path: givenString,
-            params: matchRouteResult.params,
+            params: {
+                ...additionalParams,
+                ...matchRouteResult.params
+            },
         };
 
         const handler = routeConfig.handler || this._defaultRouteHandler;
@@ -145,6 +147,8 @@ export class PathRouter {
 
         try {
             const result = (isPathRouteHandlerFunction(handler)) ? await handler(params) : await handler.execute(params);
+            if (!result) return result;
+
             if (isPathRouteHandlerExecutionResult(result)) {
                 if (result.redirectTo) return this.executeRoute(result.redirectTo);
             }

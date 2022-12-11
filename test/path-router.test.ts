@@ -1,4 +1,6 @@
 import * as assert from 'node:assert';
+import type { ParamsType } from '../src/path-route';
+import type { HandlerParamsType } from '../src/path-route-default-handler';
 import { PathRouter } from '../src/path-router';
 
 describe('PathRouter', () => {
@@ -157,6 +159,39 @@ describe('PathRouter', () => {
 
             // assert
             assert.equal(result, 'missing-route');
+        });
+
+        it(`combines any additional parameter provided into the handler params object`, async () => {
+            // arrange
+            const additionalParams: ParamsType = {
+                '--flag-a': 'flag-a-value',
+                customParam: 'customValue',
+                'some:weird:part': 'extra value',
+            };
+            const pathRouter = new PathRouter({
+                defaultRouteHandler: async (handlerParam: HandlerParamsType) : Promise<void> => {
+                    const params = handlerParam.params;
+
+                    // assert
+                    for (const paramName of Object.keys(additionalParams)) {
+                        assert.equal(params[paramName], additionalParams[paramName]);
+                    }
+                },
+            });
+            pathRouter.addRoutes([
+                {
+                    name: 'route-withExtraParams',
+                    path: 'route:{paramFromRoute}',
+                },
+                {
+                    name: 'route-2',
+                    path: 'second:route',
+                },
+            ]);
+
+            // act / assert
+            await pathRouter.executeRoute('route:route-value', additionalParams);
+            await pathRouter.executeRoute('second:route', additionalParams);
         });
     });
 });
