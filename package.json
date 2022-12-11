@@ -1,20 +1,24 @@
 {
-  "name": "path-router",
+  "name": "@krhkt/path-router",
   "description": "string path router",
   "version": "0.1.0",
   "homepage": "https://github.com/krhkt/path-router",
   "repository": "github:krhkt/path-router",
-  "lincense": "MIT",
+  "license": "MIT",
+  "author": "@krhkt",
   "main": "dist/index.js",
+  "bugs": {
+    "url": "https://github.com/krhkt/path-router/issues"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --project tsconfig-dist.json",
+    "builddev": "tsc",
     "test": "mocha ./test/**.test.ts",
     "tst": "tsc --project tsconfig-test.json && mocha ./build-test/test/**.test.js"
   },
   "keywords": [
     "app-router", "path-router"
   ],
-  "author": "@krhkt",
   "devDependencies": {
     "mocha": "^10.1.0",
     "ts-node": "^10.9.1",

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+
+  "exclude": ["node_modules/*", "**/*.test.js", "./test/**", "./dist/**", "./build-test/**"],
+
+  "compilerOptions": {
+    "strict": true,
+    "watch": false,
+    "sourceMap": false,
+
+    "target": "ES2018",
+    "module": "amd",
+    "declaration": true,
+    "isolatedModules": false,
+    "esModuleInterop": false,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+
+    "rootDir": "./src",
+    "allowJs": true,
+
+    "out": "./dist/index.js",
+    "lib": ["ES2018"],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  }
+}
