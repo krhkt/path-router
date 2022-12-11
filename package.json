@@ -2,6 +2,9 @@
   "name": "path-router",
   "description": "string path router",
   "version": "0.1.0",
+  "homepage": "https://github.com/krhkt/path-router",
+  "repository": "github:krhkt/path-router",
+  "lincense": "MIT",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -12,13 +15,10 @@
     "app-router", "path-router"
   ],
   "author": "@krhkt",
-  "license": "MIT",
   "devDependencies": {
     "mocha": "^10.1.0",
     "ts-node": "^10.9.1",
-    "typescript": "^4.8.4"
-  },
-  "dependencies": {
+    "typescript": "^4.8.4",
     "@types/mocha": "^10.0.0"
   }
 }
