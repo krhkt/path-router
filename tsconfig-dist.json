@@ -9,18 +9,18 @@
     "sourceMap": false,
 
     "target": "ES2018",
-    "module": "amd",
+    "module": "CommonJS",
     "declaration": true,
     "isolatedModules": false,
     "esModuleInterop": false,
-    "resolveJsonModule": true,
+    "resolveJsonModule": false,
     "moduleResolution": "node",
     "skipLibCheck": true,
 
     "rootDir": "./src",
     "allowJs": true,
 
-    "out": "./dist/index.js",
+    "outDir": "./dist",
     "lib": ["ES2018"],
     "paths": {
       "~/*": ["./src/*"]
