@@ -240,6 +240,18 @@ describe('PathRoute', () => {
             },
             {
                 routeConfig: {
+                    path: '/{resource}/{action}/{id}',
+                    defaults: { id: '' } as ParamsType,
+                },
+                input: '/user/new/',
+                expected: {
+                    resource: 'user',
+                    action: 'new',
+                    id: '',
+                },
+            },
+            {
+                routeConfig: {
                     path: '/{controller}/{action}/{id}',
                     constraints: { id: PathRoute.OptionalParam },
                     defaults: { controller: 'home', action: 'index', id: '' } as ParamsType,
