@@ -28,11 +28,17 @@ export const isPathRouteHandlerFunction =
     (candidate: PathRouteHandlerType): candidate is PathRouteHandlerFunctionType => typeof candidate === 'function';
 
 
+const osPathSeparator = path.sep;
+
 export class PathRouteDefaultHandler implements IPathRouteHandler {
-    executorConstructorParam?: Array<any>;
-    runnerConstructorDefaultParams?: any;
+    namespaceIdentifier = 'namespace';
     classNameIdentifier = 'controller';
     methodNameIdentifier = 'action';
+    namespaceSeparator = '.';
+    fileNameSuffixSeparator = '.';
+
+    executorConstructorParam?: Array<any>;
+    runnerConstructorDefaultParams?: any;
     baseFolderPath: Readonly<string>;
     _loadedModules: Map<string, any>;
 
@@ -48,7 +54,11 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         const classNameParam = params[this.classNameIdentifier];
         const className = this.convertParamToClassName(classNameParam);
 
-        const fileName = this.convertParamToFileName(classNameParam);
+        const possibleNamespace = this.namespaceIdentifier in params ? params[this.namespaceIdentifier] : '';
+        const namespacePath = this.convertNamespaceToPath(possibleNamespace);
+
+        const fileName = namespacePath + this.convertParamToFileName(classNameParam);
+
         const module = await this._loadFileModule(fileName);
 
         const executor = await this._instantiate(module, className, this.executorConstructorParam);
@@ -60,14 +70,23 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
     }
 
     // method to be overwritten by child classes if the build fileName logic needs change
-    convertParamToFileName(classNameIdentifier: string) {
-        return `${classNameIdentifier}.controller`.toLowerCase();
+    convertNamespaceToPath(namespace: string) {
+        namespace = namespace.trim();
+        if (!namespace) return '';
+
+        const path = namespace.replace(this.namespaceSeparator, osPathSeparator);
+        return path + (path.endsWith(osPathSeparator) ? '' : osPathSeparator);
+    }
+
+    // method to be overwritten by child classes if the build fileName logic needs change
+    convertParamToFileName(className: string) {
+        return `${className.trim()}${this.fileNameSuffixSeparator}controller`.toLowerCase();
     }
 
     // method to be overwritten by child classes if the build className logic needs change
     convertParamToClassName(param: string) {
         param = param.trim();
-        if (!param) return param;
+        if (!param) return '';
 
         const className = `${param.charAt(0).toUpperCase()}${param.substring(1)}Controller`;
         return className;

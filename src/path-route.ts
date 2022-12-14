@@ -141,11 +141,14 @@ export class PathRoute {
             }
 
             if (isPlaceholderPartType(parsedPart)) {
-                const givenPart = (givenPathParts.shift()
-                    || this.defaults[parsedPart.identifier]
-                    || '');
+                const givenPart = (givenPathParts.shift() || '');
 
-                const paramValue = this._matchPlaceholder(givenPart, parsedPart);
+                const matchedValue = this._matchPlaceholder(givenPart, parsedPart);
+                const paramValue = matchedValue !== null
+                    ? matchedValue
+                    : parsedPart.identifier in this.defaults
+                        ? this.defaults[parsedPart.identifier]
+                        : null;
                 if (paramValue === null) return null;
                 params[parsedPart.identifier] = paramValue;
                 continue;
@@ -173,10 +176,12 @@ export class PathRoute {
                 continue;
             }
 
-            if (!normalizedParams.hasOwnProperty(parsedPart.identifier)) return null;
+            const { identifier, constraint } = parsedPart;
+            if (!normalizedParams.hasOwnProperty(identifier)) return null;
 
-            const value = normalizedParams[parsedPart.identifier];
-            if (!this._applyConstraint(value, parsedPart.constraint)) return null;
+            const value = normalizedParams[identifier];
+            const defaultValue = this.defaults[identifier];
+            if ((value !== defaultValue) && !this._applyConstraint(value, constraint)) return null;
 
             path.push(
                 isPlaceholderPartType(parsedPart)
@@ -231,7 +236,7 @@ export class PathRoute {
     }
 
     _applyConstraint(candidateValue: string, constraint: ConstraintValidatorType | undefined) {
-        if (constraint === undefined) return true;
+        if (constraint === undefined) return !!candidateValue;
 
         if (typeof constraint === 'function') {
             return constraint(candidateValue);

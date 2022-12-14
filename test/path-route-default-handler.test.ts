@@ -28,6 +28,29 @@ describe('PathRouteDefaultHandler', () => {
             // assert
             assert.equal(result, 'success');
         });
+
+        it('executes and returns the method found in the path > file > code {namespace > controller > action }', async () => {
+            // arrange
+            const namespace = 'inner.path';
+            const className = 'test';
+            const methodName = 'joinparams';
+            const basePath = `${__dirname}/default-handler-test-modules`;
+            const defaultHandler = new PathRouteDefaultHandler(basePath);
+            const path = 'inner.path:test:joinparams';
+
+            // act
+            const result = await defaultHandler.execute({
+                path: path,
+                params: {
+                    namespace: namespace,
+                    controller: className,
+                    action: methodName,
+                }
+            });
+
+            // assert
+            assert.equal(result, path);
+        });
     });
 
     describe('_instantiate()', () => {

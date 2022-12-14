@@ -163,7 +163,13 @@ describe('PathRoute', () => {
                         id: PathRoute.NumericParam
                     } as ConstraintType,
                 },
-                input: '/res/edit/invalidId-10',
+                input: '/res/edit/invalid-id',
+            },
+            {
+                routeConfig: {
+                    path: 'resource/{resourceId}',
+                },
+                input: 'resource',
             },
             {
                 routeConfig: {
@@ -225,7 +231,7 @@ describe('PathRoute', () => {
                     path: '/{resource}/{action}/{id}',
                     constraints: { id: PathRoute.OptionalParam },
                 },
-                input: '/user/new/',
+                input: '/user/new',
                 expected: {
                     resource: 'user',
                     action: 'new',
@@ -235,6 +241,7 @@ describe('PathRoute', () => {
             {
                 routeConfig: {
                     path: '/{controller}/{action}/{id}',
+                    constraints: { id: PathRoute.OptionalParam },
                     defaults: { controller: 'home', action: 'index', id: '' } as ParamsType,
                 },
                 input: '/',
