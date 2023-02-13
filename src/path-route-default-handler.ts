@@ -27,6 +27,25 @@ export type PathRouteHandlerType = IPathRouteHandler | PathRouteHandlerFunctionT
 export const isPathRouteHandlerFunction =
     (candidate: PathRouteHandlerType): candidate is PathRouteHandlerFunctionType => typeof candidate === 'function';
 
+const PathExecutionErrorCodes = {
+    BasePathInvalid: 1,
+    ClassNameNotFound: 10,
+    ModuleClassNotInstantiable: 11,
+    MethodNotFound: 20,
+    MethodNotExecutable: 21,
+    ModulePathNotFound: 30,
+} as const;
+
+type PathExecutionErrorCodesType = typeof PathExecutionErrorCodes[keyof typeof PathExecutionErrorCodes];
+
+class PathExecutionError extends Error {
+    errorCode: PathExecutionErrorCodesType | null = null;
+
+    constructor(errorCode: PathExecutionErrorCodesType, ...args: any) {
+        super(...args)
+        this.errorCode = errorCode;
+    }
+}
 
 const osPathSeparator = path.sep;
 
@@ -107,12 +126,18 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         const normalizedClassName = this._findPropertyCaseInsensitive(module, className);
 
         if (normalizedClassName === null) {
-            throw new Error(`${errorMessage}: ${className} not found`);
+            throw new PathExecutionError(
+                PathExecutionErrorCodes.ClassNameNotFound,
+                `${errorMessage}: ${className} not found`,
+            );
         }
 
         const targetClass = module[normalizedClassName];
         if (!this._isNewable(targetClass)) {
-            throw new Error(`${errorMessage}: ${normalizedClassName} is not instantiable`);
+            throw new PathExecutionError(
+                PathExecutionErrorCodes.ModuleClassNotInstantiable,
+                `${errorMessage}: ${normalizedClassName} is not instantiable`,
+            );
         }
 
         return (constructorParams)
@@ -125,10 +150,16 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
 
         const normalizedMethodName = this._findPropertyCaseInsensitive(instance, methodName);
         if (normalizedMethodName === null) {
-            throw new Error(`${errorMessage}: ${methodName} not found`)
+            throw new PathExecutionError(
+                PathExecutionErrorCodes.MethodNotFound,
+                `${errorMessage}: ${methodName} not found`,
+            );
         }
         if (typeof instance[normalizedMethodName] !== 'function') {
-            throw new Error(`${errorMessage}: ${methodName} is not a method (${typeof instance[normalizedMethodName]})`);
+            throw new PathExecutionError(
+                PathExecutionErrorCodes.MethodNotExecutable,
+                `${errorMessage}: ${methodName} is not a method (${typeof instance[normalizedMethodName]})`,
+            );
         }
 
         return instance[normalizedMethodName](params) as Promise<PathRouteHandlerExecutionResult | string | null>;
@@ -138,7 +169,10 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
     _validateBaseFolderPath(baseFolderPath: string) {
         if (fs.existsSync(baseFolderPath)) return;
 
-        throw new Error(`base folder: "${baseFolderPath}" doesn't exist in the filesystem.`);
+        throw new PathExecutionError(
+            PathExecutionErrorCodes.BasePathInvalid,
+            `base folder: "${baseFolderPath}" doesn't exist in the filesystem.`,
+        );
     }
 
     async _loadFileModule(filename: string) {
@@ -150,7 +184,10 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
             this._loadedModules.set(modulePath, module);
             return module;
         } catch (e) {
-            throw new Error(`Couldn't load module ${modulePath}`);
+            throw new PathExecutionError(
+                PathExecutionErrorCodes.ModulePathNotFound,
+                `Couldn't load module ${modulePath}`
+            );
         }
     }
 
