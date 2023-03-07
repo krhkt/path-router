@@ -1,4 +1,4 @@
-import type { ParamsType, PathRouteConstructorObjectType } from './path-route';
+import type { AdditionalParamsType, ParamsType, PathRouteConstructorObjectType } from './path-route';
 import { PathRoute } from './path-route';
 import type {
     HandlerParamsType,
@@ -106,7 +106,7 @@ export class PathRouter {
         return result?.routeConfig.route.buildPathByParams(params);
     }
 
-    async executeRoute(givenString: string, additionalParams: ParamsType = {}): PathRouteHandlerReturnType {
+    async executeRoute(givenString: string, additionalParams: AdditionalParamsType = {}): PathRouteHandlerReturnType {
         const matchRouteResult = this.findMatch(givenString);
         if (matchRouteResult === null) {
             if (this._defaultMisingRouteHandler) {

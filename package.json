@@ -1,7 +1,7 @@
 {
   "name": "@krhkt/path-router",
   "description": "string path router",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "homepage": "https://github.com/krhkt/path-router",
   "repository": "github:krhkt/path-router",
   "license": "MIT",

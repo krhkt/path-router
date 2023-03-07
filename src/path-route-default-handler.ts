@@ -1,10 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { ParamsType } from './path-route';
+import type { AdditionalParamsType, ParamsType } from './path-route';
 
 export type HandlerParamsType = {
     path: string,
-    params: ParamsType,
+    params: ParamsType | AdditionalParamsType,
 };
 
 export type PathRouteHandlerExecutionResult = {

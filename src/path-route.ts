@@ -48,6 +48,10 @@ export type ParamsType = {
     [index: string]: string,
 };
 
+export type AdditionalParamsType = {
+    [index: string | number]: any
+}
+
 export type PathRouteConstructorObjectType = {
     name: string,
     path: string,
