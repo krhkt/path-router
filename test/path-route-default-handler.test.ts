@@ -22,7 +22,7 @@ describe('PathRouteDefaultHandler', () => {
                 params: {
                     controller: className,
                     action: methodName,
-                }
+                },
             });
 
             // assert
@@ -94,7 +94,7 @@ describe('PathRouteDefaultHandler', () => {
             }
         });
 
-        it(`throws if the "class" can't is not intantiable`, async () => {
+        it(`throws if the "class" is not intantiable`, async () => {
             // arrange
             const objModule = {
                 Instantiable: function (name = 'default') {

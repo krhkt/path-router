@@ -5,7 +5,6 @@
 
   "compilerOptions": {
     "strict": true,
-    "watch": false,
     "sourceMap": true,
 
     "target": "ES2018",

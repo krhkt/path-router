@@ -21,13 +21,13 @@ describe('PathRouter', () => {
                     name: routeName,
                     path: 'another:path',
                 });
-                assert.fail('Routes with the same should throw an error');
+                assert.fail('Routes with the same name should throw an error');
             } catch (e) {
                 assert.ok(e);
             }
         });
 
-        it(`requires a handler one the router doesn't have a default handler`, () => {
+        it(`requires a handler when the router doesn't have a default handler`, () => {
             // arrange
             const pathRouter = new PathRouter();
 
@@ -113,7 +113,7 @@ describe('PathRouter', () => {
     });
 
     describe('executeRoute()', () => {
-        it(`properly execute the handler for the matched route`, async () => {
+        it(`properly execute the handler for the matching route`, async () => {
             // arrange
             const pathRouter = new PathRouter({
                 routeSeparator: '/',

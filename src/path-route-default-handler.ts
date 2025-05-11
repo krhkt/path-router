@@ -85,7 +85,7 @@ export class PathRouteDefaultHandler implements IPathRouteHandler {
         const methodNameParam = params[this.methodNameIdentifier];
         const methodName = this.convertParamToMethodName(methodNameParam);
 
-        return this._executeMethod(executor, methodName, methodParams);
+        return await this._executeMethod(executor, methodName, methodParams);
     }
 
     // method to be overwritten by child classes if the build fileName logic needs change

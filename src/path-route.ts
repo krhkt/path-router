@@ -1,10 +1,10 @@
-// a path template placeholder can have it's identifer surrounded by a prefix and/or a suffix string
+// A path template placeholder can have its identifer surrounded by a prefix and/or a suffix string
 // valid placeholders parts examples:
 //  {identifier}
 //  prefix{identifier}
 //  pf{identifer}suffix
 const rgPartWithPlaceholder = /^(?<prefix>[^\{\}]*)[\{](?<identifier>[^\*\{\}]+)[\}](?<suffix>[^\{\}]*)$/;
-// a greedy placeholder cannot be prefixed or suffixed by strings
+// A greedy placeholder cannot be prefixed or suffixed by strings
 // and has the following format: {*identifier}
 const rgGreedyPlaceholder = /^\{\*(?<identifier>[^\}\{]+)\}$/;
 
