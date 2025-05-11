@@ -42,8 +42,8 @@ Example:
 
     // execute the path string:
     //  the following path string will result in:
-    //  - the instantiation of the UserController class,
-    //  - then the invocation of userControllerInstance.new()
+    //  - the instantiation of the UsersController class,
+    //  - then the invocation of usersControllerInstance.new()
     await router.executeRoute('users:new');
 ```
 
