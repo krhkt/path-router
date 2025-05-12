@@ -1,11 +1,5 @@
 import type { AdditionalParamsType, ParamsType, PathRouteConstructorObjectType } from './path-route';
 import { PathRoute } from './path-route';
-import type {
-    HandlerParamsType,
-    PathRouteHandlerType,
-    PathRouteHandlerReturnType,
-} from './path-route-default-handler';
-import { isPathRouteHandlerFunction, isPathRouteHandlerExecutionResult } from './path-route-default-handler';
 
 const defaultSeparator = ':';
 
@@ -30,6 +24,31 @@ type MatchRouteResultType = {
     routeConfig: RouteItemType,
     params: ParamsType,
 }
+
+export type HandlerParamsType = {
+    path: string,
+    params: ParamsType | AdditionalParamsType,
+};
+
+export type PathRouteHandlerExecutionResult = {
+    redirectTo?: string,
+    data?: any,
+};
+
+export type PathRouteHandlerReturnType = Promise<PathRouteHandlerExecutionResult | string | null | void>;
+export const isPathRouteHandlerExecutionResult =
+    (result: string | PathRouteHandlerExecutionResult | null): result is PathRouteHandlerExecutionResult =>
+         result !== null && typeof result !== 'string';
+
+export interface IPathRouteHandler {
+    execute(methodParams: HandlerParamsType): PathRouteHandlerReturnType
+}
+
+export type PathRouteHandlerFunctionType = ((methodParams: HandlerParamsType) => PathRouteHandlerReturnType);
+export type PathRouteHandlerType = IPathRouteHandler | PathRouteHandlerFunctionType;
+
+export const isPathRouteHandlerFunction =
+    (candidate: PathRouteHandlerType): candidate is PathRouteHandlerFunctionType => typeof candidate === 'function';
 
 export const PathRouterErrorCode = {
     unknown: 1,

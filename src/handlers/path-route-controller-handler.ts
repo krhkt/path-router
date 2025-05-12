@@ -1,31 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import type { AdditionalParamsType, ParamsType } from './path-route';
-
-export type HandlerParamsType = {
-    path: string,
-    params: ParamsType | AdditionalParamsType,
-};
-
-export type PathRouteHandlerExecutionResult = {
-    redirectTo?: string,
-    data?: any,
-};
-
-export type PathRouteHandlerReturnType = Promise<PathRouteHandlerExecutionResult | string | null | void>;
-export const isPathRouteHandlerExecutionResult =
-    (result: string | PathRouteHandlerExecutionResult | null): result is PathRouteHandlerExecutionResult =>
-         result !== null && typeof result !== 'string';
-
-export interface IPathRouteHandler {
-    execute(methodParams: HandlerParamsType): PathRouteHandlerReturnType
-}
-
-export type PathRouteHandlerFunctionType = ((methodParams: HandlerParamsType) => PathRouteHandlerReturnType);
-export type PathRouteHandlerType = IPathRouteHandler | PathRouteHandlerFunctionType;
-
-export const isPathRouteHandlerFunction =
-    (candidate: PathRouteHandlerType): candidate is PathRouteHandlerFunctionType => typeof candidate === 'function';
+import { HandlerParamsType, IPathRouteHandler, PathRouteHandlerExecutionResult } from '../path-router';
 
 const PathExecutionErrorCodes = {
     BasePathInvalid: 1,
@@ -49,7 +24,7 @@ class PathExecutionError extends Error {
 
 const osPathSeparator = path.sep;
 
-export class PathRouteDefaultHandler implements IPathRouteHandler {
+export class PathRouteControllerHandler implements IPathRouteHandler {
     namespaceIdentifier = 'namespace';
     classNameIdentifier = 'controller';
     methodNameIdentifier = 'action';

@@ -1,20 +1,19 @@
 import * as assert from 'node:assert';
-import { PathRoute } from '~/path-route';
-import { PathRouteDefaultHandler } from '../src/path-route-default-handler';
+import { PathRouteControllerHandler } from '../src/handlers/path-route-controller-handler';
 // import { DefaultController } from './default-handler-test-modules/default.controller';
 
 /**
  * Even though the majority of the methods are 'private', I'm still testing a few private methods
  * just to increase my confidence in the solution. These tests can be deleted if necessary.
  */
-describe('PathRouteDefaultHandler', () => {
+describe('PathRouteControllertHandler', () => {
     describe('execute()', () => {
         it('executes and returns the method defined by the {controller x action} set', async () => {
             // arrange
             const className = 'default';
             const methodName = 'index';
-            const basePath = `${__dirname}/default-handler-test-modules`;
-            const defaultHandler = new PathRouteDefaultHandler(basePath);
+            const basePath = `${__dirname}/controller-handler-test-modules`;
+            const defaultHandler = new PathRouteControllerHandler(basePath);
 
             // act
             const result = await defaultHandler.execute({
@@ -34,8 +33,8 @@ describe('PathRouteDefaultHandler', () => {
             const namespace = 'inner.path';
             const className = 'test';
             const methodName = 'joinparams';
-            const basePath = `${__dirname}/default-handler-test-modules`;
-            const defaultHandler = new PathRouteDefaultHandler(basePath);
+            const basePath = `${__dirname}/controller-handler-test-modules`;
+            const defaultHandler = new PathRouteControllerHandler(basePath);
             const path = 'inner.path:test:joinparams';
 
             // act
@@ -68,7 +67,7 @@ describe('PathRouteDefaultHandler', () => {
             const nameValue = 'test name';
             const params = [{name: nameValue}];
 
-            const defaultHandler = new PathRouteDefaultHandler('');
+            const defaultHandler = new PathRouteControllerHandler('');
 
             // act
             const instance = await defaultHandler._instantiate(objModule, className, params);
@@ -83,7 +82,7 @@ describe('PathRouteDefaultHandler', () => {
             // arrange
             const objModule = {};
             const className = 'InexistentClass';
-            const defaultHandler = new PathRouteDefaultHandler('');
+            const defaultHandler = new PathRouteControllerHandler('');
 
             // act / assert
             try {
@@ -107,7 +106,7 @@ describe('PathRouteDefaultHandler', () => {
             const instantiablePropertyName = 'instantiable';
             const nontInstantiablePropertyName = 'noninstantiable';
             const params = ['test name'];
-            const defaultHandler = new PathRouteDefaultHandler('');
+            const defaultHandler = new PathRouteControllerHandler('');
 
             // act
             const instance = await defaultHandler._instantiate(objModule, instantiablePropertyName, params);
@@ -129,9 +128,9 @@ describe('PathRouteDefaultHandler', () => {
     describe('_loadModule()', () => {
         it('loads the module if the respective file exists', async () => {
             // arrange
-            const basePath = `${__dirname}/default-handler-test-modules`;
+            const basePath = `${__dirname}/controller-handler-test-modules`;
             const fileName = 'default.controller';
-            const defaultHandler = new PathRouteDefaultHandler(basePath);
+            const defaultHandler = new PathRouteControllerHandler(basePath);
 
             // act
             const result = await defaultHandler._loadFileModule(fileName);
@@ -142,9 +141,9 @@ describe('PathRouteDefaultHandler', () => {
 
         it('throws if the module cannnot be loaded', async () => {
             // arrange
-            const basePath = `${__dirname}/default-handler-test-modules`;
+            const basePath = `${__dirname}/controller-handler-test-modules`;
             const dummyFileName = 'non-existent-file.controller';
-            const defaultHandler = new PathRouteDefaultHandler(basePath);
+            const defaultHandler = new PathRouteControllerHandler(basePath);
 
             // act
             try {
@@ -170,7 +169,7 @@ describe('PathRouteDefaultHandler', () => {
             };
             const propNameA = 'propa';
             const propMethod = 'methodofobject';
-            const handler = new PathRouteDefaultHandler('');
+            const handler = new PathRouteControllerHandler('');
 
             // act
             const retrievedPropA = handler._findPropertyCaseInsensitive(dummyObject, propNameA);
@@ -189,7 +188,7 @@ describe('PathRouteDefaultHandler', () => {
                 DupProp: 'dup value 1',
             };
             const propDupName = 'dupprop';
-            const handler = new PathRouteDefaultHandler('');
+            const handler = new PathRouteControllerHandler('');
 
             // act
             const retrievedDupProp = handler._findPropertyCaseInsensitive(dummyObject, propDupName);
@@ -204,7 +203,7 @@ describe('PathRouteDefaultHandler', () => {
                 someProp: 10,
             };
             const propToFind = "nonExistentProp";
-            const handler = new PathRouteDefaultHandler('');
+            const handler = new PathRouteControllerHandler('');
 
             // act
             const result = handler._findPropertyCaseInsensitive(dummyObject, propToFind);

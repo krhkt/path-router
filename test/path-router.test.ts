@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import type { ParamsType } from '../src/path-route';
-import type { HandlerParamsType } from '../src/path-route-default-handler';
+import type { HandlerParamsType } from '../src/path-router';
 import { PathRouter } from '../src/path-router';
 
 describe('PathRouter', () => {

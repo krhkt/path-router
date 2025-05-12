@@ -1,4 +1,4 @@
-import type { HandlerParamsType } from '../../../../src/path-route-default-handler';
+import type { HandlerParamsType } from '../../../../src/path-router';
 
 export class TestController {
     async joinParams(handleParams: HandlerParamsType) {
